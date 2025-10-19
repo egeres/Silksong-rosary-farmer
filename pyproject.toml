@@ -1,11 +1,9 @@
 [project]
 name = "silksong-rosary-farmer"
 version = "0.1.0"
-description = "Add your description here"
+description = "I hate manual farmiiing"
 readme = "README.md"
-authors = [
-    { name = "egeres", email = "egeres.default@gmail.com" }
-]
+authors = [{ name = "egeres", email = "egeres.default@gmail.com" }]
 requires-python = ">=3.11"
 dependencies = []
 
