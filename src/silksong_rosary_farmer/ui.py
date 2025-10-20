@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import threading
 import time
@@ -11,9 +12,8 @@ from pynput.keyboard import Key, Listener
 from silksong_rosary_farmer.farm import farm
 from silksong_rosary_farmer.monitor import list_monitors
 
-
 if getattr(sys, "frozen", False):  # running from PyInstaller bundle
-    base_path = Path(sys._MEIPASS)
+    base_path = Path(sys._MEIPASS)  # ty: ignore  # noqa: SLF001
 else:  # running from source
     base_path = Path(__file__).parent.parent.parent
 
@@ -41,10 +41,8 @@ class RosaryAutoFarmer(ctk.CTk):
         png_path = dir_images / "icon.png"  # fallback for other platforms
         # Prefer .ico on Windows (affects title bar + taskbar)
         if ico_path.exists():
-            try:
+            with contextlib.suppress(Exception):
                 self.iconbitmap(default=str(ico_path))
-            except Exception:
-                pass
         # Fallback/use on Linux/macOS window chrome (PNG via PhotoImage)
         try:
             if png_path.exists():
@@ -74,7 +72,7 @@ class RosaryAutoFarmer(ctk.CTk):
         img_path = dir_images / "Rosary_Necklace.png"
         img = Image.open(img_path)
         self.rosary_img = ctk.CTkImage(
-            light_image=img, dark_image=img, size=(132 / 2, 116 / 2)
+            light_image=img, dark_image=img, size=(132 // 2, 116 // 2)
         )
 
         header = ctk.CTkFrame(self, fg_color="transparent")

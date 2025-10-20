@@ -22,7 +22,7 @@ def main(
     monitor: str = typer.Option(
         "0",
         "--monitor",
-        help="Monitor to use (index number or position name like 'left', 'right', 'center')",
+        help="Monitor to use (index number or name like 'left', 'right', 'center')",
     ),
     max_time_in_minutes: int = typer.Option(
         999_999_999,
@@ -64,7 +64,7 @@ def main(
             print("[yellow]Available monitors:[/yellow]")
             for label, index in monitors:
                 print(f"  {label:>10} -> index {index}")
-            raise typer.Exit(1)
+            raise typer.Exit(1)  # noqa: B904
 
     # Validate monitor index
     if monitor_index < 0 or monitor_index >= len(monitors):
@@ -81,7 +81,8 @@ def main(
         f"index-{monitor_index}",
     )
     print(
-        f"[green]Starting farmer on monitor:[/green] [bold]{monitor_label}[/bold] (index {monitor_index})"
+        f"[green]Starting farmer on monitor:[/green] [bold]{monitor_label}[/bold] "
+        f"(index {monitor_index})"
     )
     print(f"[green]Max time:[/green] [bold]{max_time_in_minutes}[/bold] minutes")
 

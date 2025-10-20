@@ -3,7 +3,7 @@ General utilities
 """
 
 import os
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from pynput.keyboard import Key, Listener
 
@@ -16,7 +16,7 @@ def hex_to_rgb(hex_color) -> tuple[int, int, int]:
 
 
 def setup_escape_exit(
-    release_keys_func: Optional[Callable[[], None]] = None,
+    release_keys_func: Callable[[], None] | None = None,
 ):
     """Start a background listener that exits the process on Esc.
 

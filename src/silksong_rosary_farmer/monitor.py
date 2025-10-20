@@ -20,31 +20,32 @@ def list_monitors() -> list[tuple[str, int]]:
 
         if len(monitors) == 0:
             return []
-        elif len(sorted_monitors) == 1:
+        if len(sorted_monitors) == 1:
             return [
                 ("main", sorted_monitors[0][0]),
             ]
-        elif len(sorted_monitors) == 2:
+        if len(sorted_monitors) == 2:
             return [
                 ("left", sorted_monitors[0][0]),
                 ("right", sorted_monitors[1][0]),
             ]
-        elif len(sorted_monitors) == 3:
+        if len(sorted_monitors) == 3:
             return [
                 ("left", sorted_monitors[0][0]),
                 ("center", sorted_monitors[1][0]),
                 ("right", sorted_monitors[2][0]),
             ]
-        else:  # Duuude, who the fuck has more than 3 monitors?!
-            result = []
-            for i, (idx, _) in enumerate(sorted_monitors):
-                if i == 0:
-                    result.append(("left", idx))
-                elif i == len(sorted_monitors) - 1:
-                    result.append(("right", idx))
-                else:
-                    result.append((f"center-{i}", idx))
-            return result
+
+        # Duuude, who the fuck has more than 3 monitors?!
+        result = []
+        for i, (idx, _) in enumerate(sorted_monitors):
+            if i == 0:
+                result.append(("left", idx))
+            elif i == len(sorted_monitors) - 1:
+                result.append(("right", idx))
+            else:
+                result.append((f"center-{i}", idx))
+        return result
 
 
 if __name__ == "__main__":

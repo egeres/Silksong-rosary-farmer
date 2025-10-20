@@ -35,3 +35,63 @@ farm-silksong-rosaries = "silksong_rosary_farmer.__main__:app"
 [build-system]
 requires = ["uv_build>=0.9.4,<0.10.0"]
 build-backend = "uv_build"
+
+[tool.ruff]
+lint.select = [
+    "A",    #  flake8-builtins
+    "ARG",
+    "B",
+    "C4",
+    "DTZ",  #  flake8-datetimez
+    "E",
+    "EM",   # Error messages
+    "F",
+    "FA",   # Future annotations (__future__ import annotations)
+    "FAST", # Fast API
+    "FLY",
+    "FURB",
+    "I",
+    "INT",
+    "ISC",  #  flake8-implicit-str-concat
+    "N",
+    "NPY",  #  NumPy-specific rules
+    "PD",   #  pandas-vet, add it in the future
+    "PERF",
+    "PIE",
+    "PLC",
+    "PT",
+    "PTH",
+    "Q",
+    "RET",
+    "RSE",
+    "RUF",
+    "SIM",
+    "SLF",  #  flake8-self
+    "TC",   #  Type checking block
+    "TID",  #  flake8-tidy-imports
+    "TRY",
+    "UP",   # Pyupgrade
+    "YTT",
+
+    # To consider:
+    # "ERA", # (when the project is more mature)
+    # "PGH", #  pygrep-hooks
+    # "PL", #  Pylint
+    # "PLW",
+    # "D",
+    # "D4",
+    # "D107", # Make a branch 'docs' and add inits at least
+]
+lint.ignore = [
+    # "PD901", # Avoid using the generic variable name `df` for DataFrames
+    "A004", # Override things like `print` (I'm using rich!)
+
+    # Disabled because sometimes I add imports in functions for dynamism
+    "PLC0415", # `import` should be at the top-level of a file.
+
+    # Maybe in the future they will change this, but the following collide with fmt off
+    "E241", # Multiple spaces after comma
+    "E203", # Whitespace before ','
+
+    "B905", # zip() requires strict argument, kinda annoying IMO
+]

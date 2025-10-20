@@ -1,5 +1,5 @@
-from datetime import timedelta
 import time
+from datetime import timedelta
 from typing import Literal
 
 import mss
@@ -45,14 +45,14 @@ def farm(
         nonlocal cooldown_update
         nonlocal last_location
         nonlocal location_prev
-        r, g, b, w = color
+        r, g, b, _w = color
 
         # If both green and red are greater than blue, we are at the tavern
         if g > b and r > b:
             location_prev = last_location
             last_location = "tavern"
             return "tavern"
-        else:
+        else:  # noqa: RET505
             if last_location == "":
                 last_location = "cave"
                 return "cave"
@@ -77,7 +77,7 @@ def farm(
                 location_prev = last_location
                 last_location = "tavern"
                 return "tavern"
-            else:
+            else:  # noqa: RET505
                 location_prev = last_location
                 last_location = "cave"
                 return "cave"
@@ -181,7 +181,7 @@ def farm(
                     # and since there are like, some floating objects or something we
                     # can't get her location, this doesn't usually happen, but to
                     # prevent the autofarmer from getting completely blocked we can set
-                    # a timer off and if a long time has passed with no acitivty, then
+                    # a timer off and if a long time has passed with no activity, then
                     # she enables "go back mode"
                     print("I think... hornet is stuck at the right end of the cave?")
                     print("I'll go backkk")
@@ -355,7 +355,6 @@ def farm(
 
             except Exception as e:
                 print(e)
-                pass
 
     print("Finished!!!")
     release_all_keys()

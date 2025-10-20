@@ -18,8 +18,7 @@ def img_2_color_centroid(img_array, color_rgb, tolerance) -> tuple[float, float]
         normalized_x = centroid_x / (width - 1) if width > 1 else 0.5
         normalized_y = centroid_y / (height - 1) if height > 1 else 0.5
         return (normalized_x, normalized_y)
-    else:
-        return None
+    return None
 
 
 def img_2_coloravg(img_array) -> tuple[float, float, float, float]:
@@ -27,13 +26,11 @@ def img_2_coloravg(img_array) -> tuple[float, float, float, float]:
 
     a = np.mean(img_array, axis=(0, 1))
     added_together = np.sum(a)
-    return tuple(a) + (added_together,)
+    return (int(a[0]), int(a[1]), int(a[2]), added_together)
 
 
 def color_2_room_is_loading(color) -> bool:
     """Check if room is loading, basically, if the image is black 🤷🏻‍♂️"""
 
-    r, g, b, w = color
-    if w < 30:
-        return True
-    return False
+    _r, _g, _b, w = color
+    return w < 30
