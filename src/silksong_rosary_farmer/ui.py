@@ -6,6 +6,8 @@ from pathlib import Path
 import customtkinter as ctk
 from PIL import Image, ImageTk, ImageSequence
 
+from silksong_rosary_farmer.monitor import list_monitors
+
 
 dir_images = Path(__file__).parent.parent.parent / "static"
 
@@ -115,15 +117,16 @@ class RosaryAutoFarmer(ctk.CTk):
         controls.grid_columnconfigure(0, weight=1)
         controls.grid_columnconfigure(3, weight=1)
 
+        monitor_names = [name for name, _ in list_monitors()]
         self.monitor_combo = ctk.CTkComboBox(
             controls,
-            values=["monitor 0", "monitor 1"],
+            values=monitor_names,
             state="readonly",
             width=260,
             font=ctk.CTkFont(size=22),
             command=self.on_monitor_change,
         )
-        self.monitor_combo.set("monitor 0")
+        self.monitor_combo.set(monitor_names[0])
         self.monitor_combo.grid(row=0, column=1, padx=(0, 8))
 
         # timer (simple card, no border)
@@ -155,7 +158,8 @@ class RosaryAutoFarmer(ctk.CTk):
         vscroll.grid(row=0, column=1, sticky="ns")
         self.log_text.configure(yscrollcommand=vscroll.set)
 
-        self.log("App ready. Select a monitor and press START.")
+        self.log("Press START to start farming")
+        self.log("You can press 'esc' to quickly stop, or just press the button again")
         self.bind("<Return>", lambda _e: self.toggle_timer())
 
     # window -> content size
@@ -169,12 +173,12 @@ class RosaryAutoFarmer(ctk.CTk):
             self.running = True
             self.start_time = time.monotonic()
             self.start_btn.configure(text="STOP")
-            self.log("Timer started.")
+            self.log("Go!")
             self._tick()
         else:
             self.running = False
             self.start_btn.configure(text="START")
-            self.log(f"Timer stopped at {self.timer_var.get()}.")
+            self.log(f"Stopped at {self.timer_var.get()}")
 
     def _tick(self):
         if not self.running:
@@ -187,7 +191,7 @@ class RosaryAutoFarmer(ctk.CTk):
 
     # helpers
     def on_monitor_change(self, choice: str):
-        self.log(f"Selected {choice}.")
+        self.log(f"Monitor selected: {choice}")
 
     def log(self, msg: str):
         self.log_text.insert("end", f"{msg}\n")
