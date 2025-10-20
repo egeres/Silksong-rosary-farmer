@@ -1,11 +1,14 @@
 import sys
+import threading
 import time
 import tkinter as tk
 from pathlib import Path
 
 import customtkinter as ctk
 from PIL import Image, ImageTk, ImageSequence
+from pynput.keyboard import Key, Listener
 
+from silksong_rosary_farmer.farm import farm
 from silksong_rosary_farmer.monitor import list_monitors
 
 
@@ -29,18 +32,14 @@ class RosaryAutoFarmer(ctk.CTk):
                 )
             except Exception:
                 pass
-
-        # icon_dir = Path(__file__).parent
         ico_path = dir_images / "icon.ico"
         png_path = dir_images / "icon.png"  # fallback for other platforms
-
         # Prefer .ico on Windows (affects title bar + taskbar)
         if ico_path.exists():
             try:
                 self.iconbitmap(default=str(ico_path))
             except Exception:
                 pass
-
         # Fallback/use on Linux/macOS window chrome (PNG via PhotoImage)
         try:
             if png_path.exists():
@@ -58,6 +57,9 @@ class RosaryAutoFarmer(ctk.CTk):
         self.running = False
         self.start_time = 0.0
         self.timer_var = ctk.StringVar(value="00:00:00")
+        self.farm_thread = None
+        self.stop_event = threading.Event()
+        self.esc_listener = None
 
         # layout: one column, log grows
         self.grid_columnconfigure(0, weight=1)
@@ -175,10 +177,54 @@ class RosaryAutoFarmer(ctk.CTk):
             self.start_btn.configure(text="STOP")
             self.log("Go!")
             self._tick()
+            self.start_farming()
         else:
+            self.stop_farming()
+
+    def start_farming(self):
+        """Start the farm function in a separate thread"""
+        # Clear the stop event
+        self.stop_event.clear()
+
+        # Get the selected monitor index
+        monitor_names = [name for name, _ in list_monitors()]
+        selected_monitor = self.monitor_combo.get()
+        monitor_index = monitor_names.index(selected_monitor)
+
+        self.log("Waiting 10 seconds...")
+        time.sleep(10)
+
+        # Start the global ESC listener
+        self._start_esc_listener()
+
+        # Start the farm thread
+        self.farm_thread = threading.Thread(
+            target=farm,
+            args=(monitor_index,),
+            kwargs={"stop_event": self.stop_event},
+            daemon=True,
+        )
+        self.farm_thread.start()
+        self.log(f"Started farming on {selected_monitor}")
+        self.log("🎮 Press ESC to stop farming")
+
+    def stop_farming(self):
+        """Stop the farm thread"""
+        if self.running:
             self.running = False
             self.start_btn.configure(text="START")
             self.log(f"Stopped at {self.timer_var.get()}")
+
+            # Stop the global ESC listener
+            self._stop_esc_listener()
+
+            # Signal the farm thread to stop
+            self.stop_event.set()
+
+            if self.farm_thread and self.farm_thread.is_alive():
+                self.log("Stopping farm thread...")
+                # Give it a moment to clean up
+                self.after(100, self._check_thread_stopped)
 
     def _tick(self):
         if not self.running:
@@ -188,6 +234,35 @@ class RosaryAutoFarmer(ctk.CTk):
         m, s = divmod(rem, 60)
         self.timer_var.set(f"{h:02d}:{m:02d}:{s:02d}")
         self.after(1000, self._tick)
+
+    def _check_thread_stopped(self):
+        """Check if the farm thread has stopped"""
+        if self.farm_thread and self.farm_thread.is_alive():
+            # Still running, check again in a bit
+            self.after(100, self._check_thread_stopped)
+        else:
+            self.log("Farm thread stopped successfully")
+
+    def _start_esc_listener(self):
+        """Start a global keyboard listener for the ESC key"""
+
+        def on_press(key):
+            if key == Key.esc and self.running:
+                print("\n🛑 ESC detected - stopping farm...")
+                # Use after() to call stop_farming from the main thread
+                self.after(0, self.stop_farming)
+
+        self.esc_listener = Listener(on_press=on_press)
+        self.esc_listener.start()
+
+    def _stop_esc_listener(self):
+        """Stop the global keyboard listener"""
+        if self.esc_listener:
+            try:
+                self.esc_listener.stop()
+                self.esc_listener = None
+            except Exception:
+                pass
 
     # helpers
     def on_monitor_change(self, choice: str):

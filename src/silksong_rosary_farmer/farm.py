@@ -18,6 +18,8 @@ from silksong_rosary_farmer.utils import hex_to_rgb, setup_escape_exit
 def farm(
     monitor_index: int,
     max_time: timedelta | None = None,
+    stop_event=None,
+    enable_esc_exit: bool = False,
 ) -> None:
     max_time = max_time or timedelta(minutes=999_999_999)
 
@@ -103,7 +105,11 @@ def farm(
             keyboard.release("z")
         except Exception:
             pass
-    listener = setup_escape_exit(release_keys_func=release_all_keys)
+
+    # Set up ESC listener for standalone execution
+    listener = None
+    if enable_esc_exit:
+        listener = setup_escape_exit(release_keys_func=release_all_keys)
     # fmt: on
 
     # Loop
@@ -112,6 +118,10 @@ def farm(
 
         while True:
             if should_stop:
+                break
+            if stop_event and stop_event.is_set():
+                print("Stop event detected!")
+                release_all_keys()
                 break
             if time.time() - start_time > max_time.total_seconds():
                 print("Max time reached!")
@@ -348,13 +358,15 @@ def farm(
                 pass
 
     print("Finished!!!")
+    release_all_keys()
 
-    # Clean up the listener
-    listener.stop()
-    listener.join()
+    # Clean up the listener if it was created
+    if listener:
+        listener.stop()
+        listener.join()
 
 
 if __name__ == "__main__":
     print("[dim]Waiting 10 seconds before starting...[/dim]")
     time.sleep(10)
-    farm(0)
+    farm(0, enable_esc_exit=True)
