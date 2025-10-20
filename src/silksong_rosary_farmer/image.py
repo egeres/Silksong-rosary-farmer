@@ -31,7 +31,8 @@ def img_2_coloravg(img_array) -> tuple[float, float, float, float]:
 
 
 def color_2_room_is_loading(color) -> bool:
-    """Check if room is loading"""
+    """Check if room is loading, basically, if the image is black 🤷🏻‍♂️"""
+
     r, g, b, w = color
     if w < 30:
         print("w")

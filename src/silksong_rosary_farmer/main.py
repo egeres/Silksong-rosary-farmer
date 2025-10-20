@@ -1,46 +1,21 @@
-import os
 import time
 from typing import Literal
 
 import mss
 import numpy as np
-from pynput.keyboard import Controller, Key, Listener
+from pynput.keyboard import Controller, Key
+from rich import print
 
 from silksong_rosary_farmer.image import (
     color_2_room_is_loading,
     img_2_color_centroid,
     img_2_coloravg,
 )
-from silksong_rosary_farmer.utils import hex_to_rgb
+from silksong_rosary_farmer.utils import hex_to_rgb, setup_escape_exit
 
 # Conf
 color_hornet_dress = "#ae3446"
-max_time_in_minutes = 999_999  #  Effectively no limit btw
-
-
-# fmt: off
-should_stop = False
-def on_press(key):
-    global keyboard
-    if key == Key.esc:
-        print("\n🛑 Esc detected - stopping...")
-        # Release all keys that might be pressed
-        try:
-            keyboard.release(Key.right)
-            keyboard.release(Key.left)
-            keyboard.release(Key.up)
-            keyboard.release("c")
-            keyboard.release("x")
-            keyboard.release("z")
-        except:  # noqa: E722
-            pass
-        os._exit(0)
-listener = Listener(on_press=on_press)
-listener.start()
-print("🎮 Press Esc to stop the script")
-print("[dim]Waiting 10 seconds before starting...[/dim]")
-time.sleep(10)
-# fmt: on
+max_time_in_minutes = 999_999_999  #  Effectively no limit btw
 
 
 location_prev = "none"
@@ -53,24 +28,20 @@ behaviour = "tavern_exit"
 def color_2_room(
     color: tuple[float, float, float, float],
 ) -> Literal["tavern", "exterior", "cave"]:
-    """Analyze room type based on RGB color values"""
+    """Analyze room type based on RGB color values and the history of past rooms"""
     global cooldown_update
     global last_location
     global location_prev
-
     r, g, b, w = color
 
-    # If both green and red are greater than blue, return "tavern"
+    # If both green and red are greater than blue, we are at the tavern
     if g > b and r > b:
         location_prev = last_location
         last_location = "tavern"
-        # print("tavern")
         return "tavern"
-
     else:
         if last_location == "":
             last_location = "cave"
-            # print("tavern")
             return "cave"
 
     if (
@@ -89,7 +60,6 @@ def color_2_room(
         and time.time() - cooldown_update > cooldown_timer
     ):
         cooldown_update = time.time()
-
         if location_prev == "cave":
             location_prev = last_location
             last_location = "tavern"
@@ -119,12 +89,32 @@ tolerance = 20
 start_time = time.time()
 time_last_room_change = time.time()
 prev_room_type = "none"
+should_stop = False
+
+
+# fmt: off
+def release_all_keys():
+    try:
+        keyboard.release(Key.right)
+        keyboard.release(Key.left)
+        keyboard.release(Key.up)
+        keyboard.release("c")
+        keyboard.release("x")
+        keyboard.release("z")
+    except Exception:
+        pass
+listener = setup_escape_exit(release_keys_func=release_all_keys)
+# fmt: on
+
+
+print("[dim]Waiting 10 seconds before starting...[/dim]")
+time.sleep(10)
 
 
 # Loop
 with mss.mss() as sct:
     monitor = sct.monitors[1]
-    # for _ in range(50):
+
     while True:
         if should_stop:
             break
@@ -138,14 +128,15 @@ with mss.mss() as sct:
             w, h = screenshot.width, screenshot.height
             img_bgra = np.frombuffer(screenshot.bgra, dtype=np.uint8).reshape(h, w, 4)
             img_scaled = img_bgra[::2, ::2, [2, 1, 0]]
-
-            # Set the top-left square of the image to black
+            # Set the top-left square of the image to black, this helps to avoid windows
+            # notifications like spotify, etc as well as different selections of tools,
+            # hearts bla bla bla
             img_scaled[
                 0 : int(img_scaled.shape[0] * 0.21),
                 0 : int(img_scaled.shape[1] * 0.3),
                 :,
             ] = 0
-
+            # from matplotlib import pyplot as plt
             # plt.figure(figsize=(12, 8))
             # plt.imshow(img_scaled)
             # plt.axis("off")
@@ -155,27 +146,23 @@ with mss.mss() as sct:
 
             # 🍑 Room
             avg_color = img_2_coloravg(img_scaled)
-            # print(f"W color: {avg_color[-1]}")
-            # continue
             room_type = color_2_room(avg_color)
             if room_type != prev_room_type:
                 time_last_room_change = time.time()
                 prev_room_type = room_type
-            print(f"Beh {behaviour} Room: {room_type} Room prev: {location_prev}")
+            # print(f"Beh {behaviour} Room: {room_type} Room prev: {location_prev}")
 
-            # 🍑 Behhaviour control
+            # 🍑 Behaviour control
             if behaviour == "tavern_exit" and room_type == "exterior":
                 behaviour = "exterior_go_cave"
             if behaviour == "exterior_go_cave" and room_type == "cave":
+                print("Fighting enemies")
                 behaviour = "cave_fight"
             if behaviour == "cave_go_exterior" and room_type == "exterior":
-                print("exterior_go_tavern")
                 behaviour = "exterior_go_tavern"
             if behaviour == "exterior_go_tavern" and room_type == "tavern":
-                print("tavern_go_bench 0")
                 behaviour = "tavern_go_bench"
             if behaviour == "cave_go_exterior" and room_type == "tavern":
-                print("tavern_go_bench 1")
                 behaviour = "tavern_go_bench"
             if behaviour == "tavern_go_bench" and room_type == "exterior":
                 behaviour = "exterior_go_tavern"
@@ -183,18 +170,21 @@ with mss.mss() as sct:
                 behaviour in ["tavern_exit", "exterior_go_cave"]
                 and (time.time() - time_last_room_change) > 60
             ):
-                # Sometimes hornet gets fucking stuck at the rihg end of the cave
-                print("")
-                print("")
+                # Sometimes hornet gets fucking stuck at the rihg end of the cave and
+                # since there are like, some floating objects or something we can't get
+                # her location, this doesn't usually happen, but to prevent the
+                # autofarmer from getting completely blocked we can set a timer off and
+                # if a long time has passed with no acitivty, then she enables "go back
+                # mode"
                 print("I think... hornet is stuck at the right end of the cave?")
-                print("")
-                print("")
+                print("I'll go backkk")
                 behaviour = "cave_go_exterior"
                 last_location = "cave"
                 room_type = "cave"
 
-            # 🍑 Beh
+            # 🍑 Behaviours
             if behaviour == "exterior_go_cave":
+                # We go riiight
                 keyboard.press(Key.right)
                 time.sleep(0.1)
                 keyboard.press("c")
@@ -203,8 +193,8 @@ with mss.mss() as sct:
                 time.sleep(0.3)
                 keyboard.release(Key.right)
 
-            # 🍑 Beh
             elif behaviour == "exterior_go_tavern":
+                # We go leeeft
                 keyboard.press(Key.left)
                 time.sleep(0.2)
                 keyboard.press("c")
@@ -213,8 +203,8 @@ with mss.mss() as sct:
                 time.sleep(0.3)
                 keyboard.release(Key.left)
 
-            # 🍑 Beh
             elif behaviour == "cave_fight":
+                # Initial dash to the right until we reach the enemies
                 keyboard.press(Key.right)
                 time.sleep(0.2)
                 keyboard.press("c")
@@ -223,6 +213,7 @@ with mss.mss() as sct:
                 keyboard.release(Key.right)
                 time.sleep(0.1)
 
+                # She atac
                 for _ in range(15):
                     keyboard.press("x")
                     time.sleep(0.1)
@@ -248,19 +239,7 @@ with mss.mss() as sct:
 
                 behaviour = "cave_go_exterior"
 
-            # 🍑 Beh
             elif behaviour == "cave_go_exterior":
-                # keyboard.press(Key.left)
-                # time.sleep(0.2)
-                # keyboard.press("c")
-                # time.sleep(0.5)
-                # keyboard.press("z")
-                # time.sleep(0.1)
-                # keyboard.release("z")
-                # time.sleep(1.5)
-                # keyboard.release("c")
-                # keyboard.release(Key.left)
-
                 keyboard.press(Key.left)
                 time.sleep(0.2)
                 keyboard.press("c")
@@ -274,38 +253,28 @@ with mss.mss() as sct:
             # 🍑 Get hornet location
             result = img_2_color_centroid(img_scaled, color_rgb, tolerance)
             if not result:
-                # if room_type != "tavern" and location_prev == "none":
-                #     behaviour = "cave_go_exterior"
-                #     continue
-
-                # To get away from the fire in the middle of the tavern
+                # If at this point we don't have a result, we are probably in the fire
+                # of the middle of the tavern, so we just go right to get away from it
                 keyboard.press(Key.right)
                 time.sleep(0.3)
                 keyboard.release(Key.right)
                 continue
             x, y = result
-            print(f"Coords: x={x:.4f}, y={y:.4f}")
+            # print(f"Coords: x={x:.4f}, y={y:.4f}")
 
-            # print(
-            # c     f"Behaviour: {behaviour} Room type: {room_type} | Previous: {location_prev}"
-            # )
-
-            # 🍑 Beh
+            # 🍑 Behaviours that depend on the location
             if behaviour == "tavern_exit":
                 if y >= 0.7:  # On the floor
-                    # keyboard.press(Key.right)
-                    # time.sleep(0.1)
-                    # keyboard.release(Key.right)
+                    # We just go right
                     keyboard.press(Key.right)
                     time.sleep(0.2)
                     keyboard.press("c")
                     time.sleep(0.6)
                     keyboard.release("c")
                     keyboard.release(Key.right)
-                elif y >= 0.45:  # On the bench slab
-                    # keyboard.press(Key.left)
-                    # time.sleep(0.1)
-                    # keyboard.release(Key.left)
+
+                elif y >= 0.45:  # On the bench platform
+                    # We go left
                     keyboard.press(Key.left)
                     time.sleep(0.1)
                     keyboard.release(Key.left)
@@ -316,8 +285,8 @@ with mss.mss() as sct:
                     keyboard.release("c")
                     keyboard.release(Key.left)
 
+                    # We go right after we fall for a little bit
                     time.sleep(0.2)
-
                     keyboard.press(Key.right)
                     time.sleep(0.2)
                     keyboard.press("c")
@@ -328,6 +297,8 @@ with mss.mss() as sct:
             # 🍑 Beh
             elif behaviour == "tavern_go_bench":
                 if y >= 0.7:  # On the floor
+                    # First we position ourselves under the right side of the ledge of
+                    # the bench platform at the tavern
                     if x < 0.72:
                         keyboard.press(Key.right)
                         time.sleep(0.1)
@@ -336,6 +307,7 @@ with mss.mss() as sct:
                         keyboard.press(Key.left)
                         time.sleep(0.1)
                         keyboard.release(Key.left)
+                    # Once we are there, we jump and go right
                     else:
                         keyboard.press("z")
                         time.sleep(0.45)
@@ -351,7 +323,8 @@ with mss.mss() as sct:
                         keyboard.release("c")
                         keyboard.release(Key.right)
 
-                elif y >= 0.45:  # On the bench slab
+                elif y >= 0.45:  # On the bench platform
+                    # we go right or left depending on the x coordinate
                     if x < 0.7:
                         keyboard.press(Key.right)
                         time.sleep(0.1)
@@ -360,17 +333,13 @@ with mss.mss() as sct:
                         keyboard.press(Key.left)
                         time.sleep(0.1)
                         keyboard.release(Key.left)
+                    # Once we are "at the bench", we sit
                     else:
                         keyboard.press(Key.up)
                         time.sleep(0.1)
                         keyboard.release(Key.up)
-
                         time.sleep(0.5)
                         behaviour = "tavern_exit"
-
-            # else:
-            #     msg = f"Unknown behaviour: {behaviour}"
-            #     raise ValueError(msg)
 
         except Exception as e:
             print(e)
@@ -379,6 +348,5 @@ with mss.mss() as sct:
 print("Finished!!!")
 
 # Clean up the listener
-print("Cleaning up...")
 listener.stop()
 listener.join()
