@@ -14,15 +14,23 @@ from silksong_rosary_farmer.image import (
 from silksong_rosary_farmer.utils import hex_to_rgb, setup_escape_exit
 
 # Conf
-color_hornet_dress = "#ae3446"
 max_time_in_minutes = 999_999_999  #  Effectively no limit btw
 
 
+# Pre
 location_prev = "none"
 last_location = ""
 cooldown_update = time.time()
 cooldown_timer = 1
 behaviour = "tavern_exit"
+keyboard = Controller()
+color_hornet_dress = "#ae3446"
+color_hornet_dress_rgb = hex_to_rgb(color_hornet_dress)
+color_hornet_dress_tolerance = 20
+start_time = time.time()
+time_last_room_change = time.time()
+prev_room_type = "none"
+should_stop = False
 
 
 def color_2_room(
@@ -80,16 +88,6 @@ def color_2_room(
         return "exterior"
 
     return last_location
-
-
-# Pre
-keyboard = Controller()
-color_rgb = hex_to_rgb(color_hornet_dress)
-tolerance = 20
-start_time = time.time()
-time_last_room_change = time.time()
-prev_room_type = "none"
-should_stop = False
 
 
 # fmt: off
@@ -251,7 +249,11 @@ with mss.mss() as sct:
                 keyboard.release(Key.left)
 
             # 🍑 Get hornet location
-            result = img_2_color_centroid(img_scaled, color_rgb, tolerance)
+            result = img_2_color_centroid(
+                img_scaled,
+                color_hornet_dress_rgb,
+                color_hornet_dress_tolerance,
+            )
             if not result:
                 # If at this point we don't have a result, we are probably in the fire
                 # of the middle of the tavern, so we just go right to get away from it
