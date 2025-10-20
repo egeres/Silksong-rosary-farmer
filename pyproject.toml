@@ -5,6 +5,15 @@ description = "I hate manual farmiiing"
 readme = "README.md"
 authors = [{ name = "egeres", email = "egeres.default@gmail.com" }]
 requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["hollow-knight", "silksong", "farming", "automation", "gaming"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+]
+
 dependencies = [
     "customtkinter>=5.2.2",
     "mss>=10.1.0",
@@ -15,8 +24,13 @@ dependencies = [
     "typer>=0.19.2",
 ]
 
+[project.urls]
+Homepage = "https://github.com/egeres/Silksong-rosary-farmer"
+Repository = "https://github.com/egeres/Silksong-rosary-farmer"
+Issues = "https://github.com/egeres/Silksong-rosary-farmer/issues"
+
 [project.scripts]
-silksong-rosary-farmer = "silksong_rosary_farmer:main"
+farm-silksong-rosaries = "silksong_rosary_farmer.__main__:main"
 
 [build-system]
 requires = ["uv_build>=0.9.4,<0.10.0"]
