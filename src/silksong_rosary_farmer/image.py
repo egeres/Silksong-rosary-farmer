@@ -35,6 +35,5 @@ def color_2_room_is_loading(color) -> bool:
 
     r, g, b, w = color
     if w < 30:
-        print("w")
         return True
     return False
