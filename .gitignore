@@ -1,2 +1,8 @@
 
 src/silksong_rosary_farmer/__pycache__/
+
+build/
+
+dist/
+
+RosaryFarmer.spec

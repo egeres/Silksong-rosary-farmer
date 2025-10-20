@@ -5,14 +5,19 @@ import tkinter as tk
 from pathlib import Path
 
 import customtkinter as ctk
-from PIL import Image, ImageTk, ImageSequence
+from PIL import Image, ImageSequence, ImageTk
 from pynput.keyboard import Key, Listener
 
 from silksong_rosary_farmer.farm import farm
 from silksong_rosary_farmer.monitor import list_monitors
 
 
-dir_images = Path(__file__).parent.parent.parent / "static"
+if getattr(sys, "frozen", False):  # running from PyInstaller bundle
+    base_path = Path(sys._MEIPASS)
+else:  # running from source
+    base_path = Path(__file__).parent.parent.parent
+
+dir_images = base_path / "static"
 
 
 class RosaryAutoFarmer(ctk.CTk):
