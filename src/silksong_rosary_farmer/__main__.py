@@ -8,7 +8,13 @@ from rich import print
 from silksong_rosary_farmer.farm import farm
 from silksong_rosary_farmer.monitor import list_monitors
 
+# Create a Typer app
+app = typer.Typer(
+    help="Silksong Rosary Farmer - Automates farming rosaries in Hollow Knight."
+)
 
+
+@app.command()
 def main(
     list_monitors_flag: bool = typer.Option(
         False, "--list-monitors", help="List available monitors and exit"
@@ -33,10 +39,10 @@ def main(
             print("[red]No monitors detected![/red]")
             raise typer.Exit(1)
 
-        print("[bold cyan]Available monitors:[/bold cyan]")
+        print("[bold cyan]\nAvailable monitors:[/bold cyan]")
         for label, index in monitors:
             print(f"  {label:>10} -> index {index}")
-        return  # Changed from: raise typer.Exit(0)
+        return
 
     # Parse monitor option (can be int index or string label)
     monitors = list_monitors()
@@ -84,16 +90,10 @@ def main(
 
 
 if __name__ == "__main__":
-    # print("[dim]Waiting 10 seconds before starting...[/dim]")
-    # time.sleep(10)
-    # farm(0, enable_esc_exit=True)
-
-    # import typer
-
     try:
-        typer.run(main)
+        app()
     except (typer.Exit, SystemExit) as e:
-        if hasattr(e, 'exit_code'):
+        if hasattr(e, "exit_code"):
             exit(e.exit_code)
         elif isinstance(e, SystemExit):
             exit(e.code if e.code is not None else 0)

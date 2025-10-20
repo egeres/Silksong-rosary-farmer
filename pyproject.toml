@@ -30,7 +30,7 @@ Repository = "https://github.com/egeres/Silksong-rosary-farmer"
 Issues = "https://github.com/egeres/Silksong-rosary-farmer/issues"
 
 [project.scripts]
-farm-silksong-rosaries = "silksong_rosary_farmer.__main__:main"
+farm-silksong-rosaries = "silksong_rosary_farmer.__main__:app"
 
 [build-system]
 requires = ["uv_build>=0.9.4,<0.10.0"]
